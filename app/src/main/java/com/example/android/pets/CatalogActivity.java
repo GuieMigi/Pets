@@ -26,6 +26,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+
+import com.example.android.pets.data.PetContract;
 import com.example.android.pets.data.PetContract.PetEntry;
 import com.example.android.pets.data.PetDbHelper;
 
@@ -66,7 +68,7 @@ public class CatalogActivity extends AppCompatActivity {
     private void displayDatabaseInfo() {
 
         // Create and/or open a database to read from it
-        SQLiteDatabase database = dbHelper.getReadableDatabase();
+        //SQLiteDatabase database = dbHelper.getReadableDatabase();
 
         String[] projection = {
                 PetEntry._ID,
@@ -76,14 +78,22 @@ public class CatalogActivity extends AppCompatActivity {
                 PetEntry.COLUMN_PET_WEIGHT
         };
 
-        Cursor cursor = database.query(
-                PetEntry.TABLE_NAME, projection,
+        Cursor cursor = getContentResolver().query(
+                PetEntry.CONTENT_URI,
+                projection,
+                null,
+                null,
+                null);
+
+        /*Cursor cursor = database.query(
+                PetEntry.TABLE_NAME,
+                projection,
                 null,
                 null,
                 null,
                 null,
                 null);
-
+                */
         try {
             // Display the number of rows in the Cursor (which reflects the number of rows in the
             // pets table in the database).
@@ -130,10 +140,10 @@ public class CatalogActivity extends AppCompatActivity {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
         // Create a ContentValues object where column names are the keys and Toto's pet attributes are the values.
         ContentValues values = new ContentValues();
-        values.put(PetEntry.COLUMN_PET_NAME, "Toto");
-        values.put(PetEntry.COLUMN_PET_BREED, "Terrier");
+        values.put(PetEntry.COLUMN_PET_NAME, "Gus");
+        values.put(PetEntry.COLUMN_PET_BREED, "Border Collie");
         values.put(PetEntry.COLUMN_PET_GENDER, PetEntry.GENDER_MALE);
-        values.put(PetEntry.COLUMN_PET_WEIGHT, 7);
+        values.put(PetEntry.COLUMN_PET_WEIGHT, 15);
 
         // Insert a new row for Toto in the database, returning the ID of that new row.
         // The first argument for database.insert() is the pets table name.
