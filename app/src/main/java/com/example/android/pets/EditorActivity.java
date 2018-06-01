@@ -17,6 +17,7 @@ package com.example.android.pets;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
@@ -39,22 +40,23 @@ import com.example.android.pets.data.PetDbHelper;
  */
 public class EditorActivity extends AppCompatActivity {
 
-    /** EditText field to enter the pet's name */
+    // Tag for the log messages.
+    public static final String LOG_TAG = EditorActivity.class.getSimpleName();
+
+    // EditText field to enter the pet's name.
     private EditText mNameEditText;
 
-    /** EditText field to enter the pet's breed */
+    // EditText field to enter the pet's breed.
     private EditText mBreedEditText;
 
-    /** EditText field to enter the pet's weight */
+    // EditText field to enter the pet's weight.
     private EditText mWeightEditText;
 
-    /** EditText field to enter the pet's gender */
+    // EditText field to enter the pet's gender.
     private Spinner mGenderSpinner;
 
-    /**
-     * Gender of the pet. The possible values are:
-     * 0 for unknown gender, 1 for male, 2 for female.
-     */
+    // Gender of the pet. The possible values are:
+    // 0 for unknown gender, 1 for male, 2 for female.
     private int mGender = 0;
 
     @Override
@@ -115,7 +117,12 @@ public class EditorActivity extends AppCompatActivity {
         String nameString = mNameEditText.getText().toString().trim();
         String breedString = mBreedEditText.getText().toString().trim();
         String weightString = mWeightEditText.getText().toString().trim();
-        int weightInt = Integer.parseInt(weightString);
+        int weightInt = 0;
+        // Check if the weightString is empty.
+        if (TextUtils.isEmpty(weightString)) {
+            Log.e(LOG_TAG, "Empty string variable");
+        } else weightInt = Integer.parseInt(weightString);
+
         // Create database helper.
         PetDbHelper dbHelper = new PetDbHelper(this);
         // Get the database in write mode.
@@ -126,12 +133,17 @@ public class EditorActivity extends AppCompatActivity {
         values.put(PetEntry.COLUMN_PET_BREED, breedString);
         values.put(PetEntry.COLUMN_PET_GENDER, mGender);
         values.put(PetEntry.COLUMN_PET_WEIGHT, weightInt);
-        // Insert a new row for pet in the database, returning the ID of that new row.
-        long newRowId = database.insert(PetEntry.TABLE_NAME, null, values);
-        // Show a toast message depending on whether or not the insertion was successful.
-        if (newRowId == -1) {
-            Toast.makeText(this, "Error with saving pet", Toast.LENGTH_LONG).show();
-        } else Toast.makeText(this, "Pet saved with id " + newRowId, Toast.LENGTH_LONG).show();
+        // Call the ContentResolver to insert a new row for pet in the database.
+        Uri newUri = getContentResolver().insert(PetEntry.CONTENT_URI, values);
+
+        if (newUri == null) {
+            // If the new content URI is null, then there was an error with insertion.
+            Toast.makeText(this, getString(R.string.editor_insert_pet_failed), Toast.LENGTH_LONG).show();
+        } else {
+            // Otherwise, the insertion was successful and we can display a toast.
+            Toast.makeText(this, getString(R.string.editor_insert_pet_successful),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
