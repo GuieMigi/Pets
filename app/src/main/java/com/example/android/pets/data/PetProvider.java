@@ -48,25 +48,19 @@ public class PetProvider extends ContentProvider {
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         SQLiteDatabase database = dbHelper.getReadableDatabase();
-        Cursor cursor;
 
         int match = sUriMatcher.match(uri);
 
         switch (match) {
             case PETS:
-                cursor = database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
-                break;
-
+                return database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
             case PET_ID:
                 selection = PetContract.PetEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                cursor = database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
-                break;
-
+                return database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
             default:
                 throw new IllegalArgumentException("Cannot querry unknown URI " + uri);
         }
-        return cursor;
     }
 
     // Returns the MIME type of data for the content URI.
@@ -95,7 +89,6 @@ public class PetProvider extends ContentProvider {
         switch (match) {
             case PETS:
                 return insertPet(uri, contentValues);
-
             default:
                 throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }

@@ -15,6 +15,7 @@
  */
 package com.example.android.pets;
 
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -24,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 import com.example.android.pets.data.PetContract.PetEntry;
 
@@ -75,6 +77,15 @@ public class CatalogActivity extends AppCompatActivity {
                 null,
                 null);
 
+        // Find the ListView which will be populated with the pet data.
+        ListView listView = findViewById(R.id.list_view);
+        View emptyView = findViewById(R.id.empty_view);
+        listView.setEmptyView(emptyView);
+        // Setup an Adapter to create a list item for each row of pet data in the Cursor.
+        PetCursorAdapter cursorAdapter = new PetCursorAdapter(this, cursor);
+        // Attach the adapter to the ListView.
+        listView.setAdapter(cursorAdapter);
+
         /*Cursor cursor = database.query(
                 PetEntry.TABLE_NAME,
                 projection,
@@ -83,7 +94,7 @@ public class CatalogActivity extends AppCompatActivity {
                 null,
                 null,
                 null);
-                */
+
 
         TextView displayView = findViewById(R.id.text_view_pet);
 
@@ -124,14 +135,15 @@ public class CatalogActivity extends AppCompatActivity {
             // resources and makes it invalid.
             cursor.close();
         }
+        */
     }
 
     // Helper method to insert hardcoded pet data into the database. For debugging purposes only.
     private void insertPet() {
         // Create a ContentValues object where column names are the keys and Toto's pet attributes are the values.
         ContentValues values = new ContentValues();
-        values.put(PetEntry.COLUMN_PET_NAME, "Gus");
-        values.put(PetEntry.COLUMN_PET_BREED, "Border Collie");
+        values.put(PetEntry.COLUMN_PET_NAME, "Toto");
+        values.put(PetEntry.COLUMN_PET_BREED, "Terrier");
         values.put(PetEntry.COLUMN_PET_GENDER, PetEntry.GENDER_MALE);
         values.put(PetEntry.COLUMN_PET_WEIGHT, 15);
         getContentResolver().insert(PetEntry.CONTENT_URI, values);
