@@ -73,7 +73,16 @@ public class PetProvider extends ContentProvider {
     @Nullable
     @Override
     public String getType(@NonNull Uri uri) {
-        return null;
+        final int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case PETS:
+                return PetEntry.CONTENT_LIST_TYPE;
+            case PET_ID:
+                return PetEntry.CONTENT_ITEM_TYPE;
+            default:
+                throw new IllegalStateException("Unknownwn URI " + uri + " with match " + match);
+        }
     }
 
     // Insert new data into the provider with the given ContentValues.
@@ -81,7 +90,7 @@ public class PetProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues contentValues) {
 
-        int match = sUriMatcher.match(uri);
+        final int match = sUriMatcher.match(uri);
 
         switch (match) {
             case PETS:
@@ -95,13 +104,35 @@ public class PetProvider extends ContentProvider {
     // Delete the data at the given selection and selection arguments.
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+        final int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case PETS:
+                return deletePet(uri, selection, selectionArgs);
+            case PET_ID:
+                selection = PetEntry._ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                return deletePet(uri, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Delete is not supported for " + uri);
+        }
     }
 
     // Updates the data at the given selection and selection arguments, with the new ContentValues.
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+        final int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case PETS:
+                return updatePet(uri, contentValues, selection, selectionArgs);
+            case PET_ID:
+                selection = PetEntry._ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                return updatePet(uri, contentValues, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Update is not supported for " + uri);
+        }
     }
 
     private Uri insertPet(Uri uri, ContentValues values) {
@@ -110,13 +141,14 @@ public class PetProvider extends ContentProvider {
         if (TextUtils.isEmpty(name)) {
             throw new IllegalArgumentException("Pet requires a name");
         }
+
         // Check that the gender is valid.
         Integer gender = values.getAsInteger(PetEntry.COLUMN_PET_GENDER);
         if (gender == null || !PetEntry.isValidGender(gender)) {
             throw new IllegalArgumentException("Pet requires a valid gender");
         }
 
-        // If the weight is provided, check that it's greater than or equal to 0 kg
+        // If the weight is provided, check that it's greater than or equal to 0 kg.
         Integer weight = values.getAsInteger(PetEntry.COLUMN_PET_WEIGHT);
         if (weight != null && weight < 0) {
             throw new IllegalArgumentException("The weight cannot have a negative value");
@@ -132,5 +164,51 @@ public class PetProvider extends ContentProvider {
             return null;
         } else Toast.makeText(getContext(), "Pet saved", Toast.LENGTH_LONG).show();
         return ContentUris.withAppendedId(uri, id);
+    }
+
+    private int updatePet(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        // Check if the name needs to be updated.
+        if (values.containsKey(PetEntry.COLUMN_PET_NAME)) {
+            // Check that the name is not null.
+            String name = values.getAsString(PetEntry.COLUMN_PET_NAME);
+            if (TextUtils.isEmpty(name)) {
+                throw new IllegalArgumentException("Pet requires a name");
+            }
+        }
+
+        // Check if the gender needs to be updated.
+        if (values.containsKey(PetEntry.COLUMN_PET_GENDER)) {
+            // Check that the gender is valid.
+            Integer gender = values.getAsInteger(PetEntry.COLUMN_PET_GENDER);
+            if (gender == null || !PetEntry.isValidGender(gender)) {
+                throw new IllegalArgumentException("Pet requires a valid gender");
+            }
+        }
+
+        // Check if the weight needs to be updated.
+        if (values.containsKey(PetEntry.COLUMN_PET_WEIGHT)) {
+            // If the weight is provided, check that it's greater than or equal to 0 kg.
+            Integer weight = values.getAsInteger(PetEntry.COLUMN_PET_WEIGHT);
+            if (weight != null && weight < 0) {
+                throw new IllegalArgumentException("The weight cannot have a negative value");
+            }
+        }
+
+        // If there are no values to update, then don't try to update the database
+        if (values.size() == 0) {
+            return 0;
+        }
+
+        // Get the database in write mode.
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+        // Returns the number of database rows affected by the update statement.
+        return database.update(PetEntry.TABLE_NAME, values, selection, selectionArgs);
+    }
+
+    private int deletePet(Uri uri, String selection, String[] selectionArgs) {
+        // Get the database in write mode.
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+        // Returns the number of database rows affected by the update statement.
+        return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
     }
 }
