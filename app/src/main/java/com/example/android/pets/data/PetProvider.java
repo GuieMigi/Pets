@@ -49,18 +49,23 @@ public class PetProvider extends ContentProvider {
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         SQLiteDatabase database = dbHelper.getReadableDatabase();
 
+        Cursor cursor;
         int match = sUriMatcher.match(uri);
 
         switch (match) {
             case PETS:
-                return database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
             case PET_ID:
                 selection = PetContract.PetEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                return database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = database.query(PetContract.PetEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
             default:
                 throw new IllegalArgumentException("Cannot querry unknown URI " + uri);
         }
+        // Set notification URI on the Cursor.
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
     }
 
     // Returns the MIME type of data for the content URI.
@@ -156,6 +161,8 @@ public class PetProvider extends ContentProvider {
             Log.e(LOG_TAG, "Failed to insert row for " + uri);
             return null;
         } else Toast.makeText(getContext(), "Pet saved", Toast.LENGTH_LONG).show();
+        // Notify all listeners that the data has changed for the pet content URI.
+        getContext().getContentResolver().notifyChange(uri, null);
         return ContentUris.withAppendedId(uri, id);
     }
 
@@ -194,14 +201,42 @@ public class PetProvider extends ContentProvider {
 
         // Get the database in write mode.
         SQLiteDatabase database = dbHelper.getWritableDatabase();
+        // Perform the update on the database and get the number of rows affected.
+        int rowsUpdated = database.update(PetEntry.TABLE_NAME, values, selection, selectionArgs);
+        // If 1 or more rows were updated, then notify all listeners that the data at the given URI has changed.
+        if (rowsUpdated >= 1) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
         // Returns the number of database rows affected by the update statement.
-        return database.update(PetEntry.TABLE_NAME, values, selection, selectionArgs);
+        return rowsUpdated;
     }
 
     private int deletePet(Uri uri, String selection, String[] selectionArgs) {
         // Get the database in write mode.
         SQLiteDatabase database = dbHelper.getWritableDatabase();
+        // Track the number of rows that were deleted.
+        int rowsDeleted;
+        final int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case PETS:
+                // Delete all rows that match the selection and selection args
+                rowsDeleted = database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case PET_ID:
+                // Delete a single row given by the ID in the URI.
+                selection = PetEntry._ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                rowsDeleted = database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            default:
+                throw new IllegalArgumentException("Deletion is not supported for " + uri);
+        }
+        if (rowsDeleted >= 1) {
+            // If 1 or more rows were deleted, then notify all listeners that the data has changed for the pet content URI.
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
         // Returns the number of database rows affected by the update statement.
-        return database.delete(PetEntry.TABLE_NAME, selection, selectionArgs);
+        return rowsDeleted;
     }
 }
