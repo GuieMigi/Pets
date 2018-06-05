@@ -17,17 +17,21 @@ package com.example.android.pets;
 
 import android.app.LoaderManager;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 import com.example.android.pets.data.PetContract.PetEntry;
@@ -56,7 +60,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
         });
 
         // Find the ListView which will be populated with the pet data.
-        ListView listView = findViewById(R.id.list_view);
+        final ListView listView = findViewById(R.id.list_view);
         View emptyView = findViewById(R.id.empty_view);
         listView.setEmptyView(emptyView);
         // Setup an Adapter to create a list item for each row of pet data in the Cursor.
@@ -64,6 +68,16 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
         // Attach the adapter to the ListView.
         listView.setAdapter(cursorAdapter);
         getLoaderManager().initLoader(PET_CURSOR_LOADER_ID, null, this);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                ContentUris contentUris = new ContentUris();
+                Uri currentPetUri = contentUris.withAppendedId(PetEntry.CONTENT_URI, id);
+                Intent startEditorActivity = new Intent(CatalogActivity.this, EditorActivity.class);
+                startEditorActivity.setData(currentPetUri);
+                startActivity(startEditorActivity);
+            }
+        });
     }
 
     // Temporary helper method to display information in the onscreen TextView about the state of the pets database.
@@ -192,7 +206,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
                 String[] projection = {
                         PetEntry._ID,
                         PetEntry.COLUMN_PET_NAME,
-                        PetEntry.COLUMN_PET_BREED,
+                        PetEntry.COLUMN_PET_BREED
                 };
 
                 return new CursorLoader(this, PetEntry.CONTENT_URI, projection, null, null, null);
