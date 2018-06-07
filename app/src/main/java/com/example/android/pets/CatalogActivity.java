@@ -75,6 +75,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
                 Uri currentPetUri = contentUris.withAppendedId(PetEntry.CONTENT_URI, id);
                 Intent startEditorActivity = new Intent(CatalogActivity.this, EditorActivity.class);
                 startEditorActivity.setData(currentPetUri);
+                startEditorActivity.putExtra("PET_ID", id);
                 startActivity(startEditorActivity);
             }
         });

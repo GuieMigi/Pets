@@ -161,7 +161,7 @@ public class PetProvider extends ContentProvider {
         if (id == -1) {
             Log.e(LOG_TAG, "Failed to insert row for " + uri);
             return null;
-        } else Toast.makeText(getContext(), "Pet saved", Toast.LENGTH_LONG).show();
+        }
         // Notify all listeners that the data has changed for the pet content URI.
         getContext().getContentResolver().notifyChange(uri, null);
         return ContentUris.withAppendedId(uri, id);
